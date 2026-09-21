@@ -1,0 +1,485 @@
+{
+  "name": "Baron AI - AI Visibility Audit (v2 - 3 engines + comments)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🟢 READ ME FIRST — Setup Checklist\n\nDo these 5 things after importing, in order:\n\n**1. Create 4 credentials** (Settings → Credentials):\n- `Anthropic API Key` → type **Header Auth** → Name: `x-api-key` → Value: your key from console.anthropic.com\n- `Perplexity API Key` → type **Header Auth** → Name: `Authorization` → Value: `Bearer pplx-xxxx` (key from perplexity.ai/settings/api)\n- `OpenAI API Key` → type **Header Auth** → Name: `Authorization` → Value: `Bearer sk-xxxx` (key from platform.openai.com)\n- `Gmail account` → type **Gmail OAuth2**\n\n**2. Re-select credentials** in these 6 nodes (they show a red ⚠ after import): Ask Claude, Ask Perplexity, Ask ChatGPT, Analyse Mentions, Generate HTML Report, Send Report.\n\n**3. Edit your branding** → open the *Generate HTML Report* node and replace the contact placeholder text in the prompt with Baron AI's real email/phone/website.\n\n**4. Activate the workflow** (toggle top-right).\n\n**5. Get your form link** → open *Audit Request Form* node → copy the Production URL. That link is your audit intake — bookmark it.\n\n💷 Cost per full audit: roughly £1–£2.50 in API fees across all 3 engines.",
+        "height": 620,
+        "width": 420,
+        "color": 4
+      },
+      "id": "note-readme",
+      "name": "Note - Read Me First",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-720, 60]
+    },
+    {
+      "parameters": {
+        "content": "## 📋 Intake + Prompt Builder\n\n**Audit Request Form** — no changes needed. Fill it per prospect/client. Business Name must match how they appear publicly online (this is what mention-detection looks for).\n\n**Build Prompts** — generates up to 18 questions from the form. Things you can safely edit inside the code:\n- The question templates (the 3 lines starting `prompts.push(...)`) — reword to match how real customers in your niche talk.\n- `.slice(0, 4)` — max services used (raise = more prompts = higher cost).\n- `.slice(0, 18)` — total prompt cap.\n\n⚠️ Keep prompts identical month-to-month for the same client — that's what makes before/after scores comparable.",
+        "height": 420,
+        "width": 380,
+        "color": 5
+      },
+      "id": "note-intake",
+      "name": "Note - Intake and Prompts",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-260, 60]
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 The 3 AI Engines\n\nEach prompt is asked on **Claude** (with live web search), **Perplexity** (sonar — web-grounded by default), and **ChatGPT** (OpenAI Responses API with web search).\n\n**Credentials:** each node uses its own Header Auth credential — see Read Me note.\n\n**Batching:** requests run 2-at-a-time with a 1.5s gap to avoid rate limits. If you hit 429 errors, raise `batchInterval` to 3000 in the node's Options → Batching.\n\n**Don't have all 3 API keys yet?** You can delete an engine branch (e.g. Ask ChatGPT + Normalise ChatGPT Answer), then open *Merge Answers* and reduce **Number of Inputs** from 3 → 2. The rest still works.\n\n⚠️ Reality check: these APIs are close *proxies* for the consumer apps, not exact copies. For cold outreach, still manually screenshot 2–3 prompts in the real ChatGPT app — the screenshot is your hook, this workflow is the depth behind it.",
+        "height": 520,
+        "width": 400,
+        "color": 6
+      },
+      "id": "note-engines",
+      "name": "Note - AI Engines",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, -180]
+    },
+    {
+      "parameters": {
+        "content": "## 🔍 Analysis + Scoring\n\n**Analyse Mentions** — sends all 3 answers per question to Claude, which returns strict JSON: mentioned yes/no, list position, sentiment, competitors recommended instead, and the single best quote for your sales pitch. No changes needed.\n\n**Aggregate Results** — computes:\n- Visibility rate % per engine\n- Top 8 competitors AI recommends instead (with counts)\n- Question-by-question rows for the report table\n\n✅ Before sending a report to a *paying* client, skim the question-by-question table — mention detection is very good but not perfect (oddly-phrased mentions occasionally slip through).",
+        "height": 400,
+        "width": 380,
+        "color": 3
+      },
+      "id": "note-analysis",
+      "name": "Note - Analysis",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1060, -100]
+    },
+    {
+      "parameters": {
+        "content": "## 📄 Report + Delivery\n\n**Generate HTML Report** — Claude writes a full client-ready HTML report (scorecard, competitor table, question-by-question results, next steps, disclaimer).\n\n🖊 **EDIT THIS NODE:** in the prompt, replace `Baron AI Solutions LTD contact placeholder` with your real contact details. You can also tweak the colour palette instruction (currently dark navy + white) to match your brand.\n\n**Send Report** — emails the HTML to whatever address was entered in the form. Use YOUR email for prospect audits (you forward it with your pitch); the client's email for monthly retainer reports.\n\n💡 Upgrade later: pipe the HTML through Gotenberg (free, self-hosted) to attach a PDF instead — feels more like a £297 deliverable.",
+        "height": 440,
+        "width": 380,
+        "color": 7
+      },
+      "id": "note-delivery",
+      "name": "Note - Report and Delivery",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1540, -120]
+    },
+    {
+      "parameters": {
+        "content": "## 🔁 Retainer Version (later)\n\nWhen clients are paying monthly:\n1. Duplicate this workflow\n2. Replace the Form Trigger with a **Schedule Trigger** (1st of month, 07:00 Europe/London)\n3. Add a **Google Sheets** node reading a Clients sheet (same columns as the form)\n4. Change every `$('Audit Request Form')` reference in the code/HTTP nodes to point at the Sheets data\n5. Append each month's scores to a history tab → that history chart is why clients don't cancel.\n\n⚠️ Sales language: never promise guaranteed AI placement. Sell measurement + systematic improvement. The report footer already includes the disclaimer.",
+        "height": 380,
+        "width": 380,
+        "color": 2
+      },
+      "id": "note-retainer",
+      "name": "Note - Retainer Version",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1980, -60]
+    },
+    {
+      "parameters": {
+        "formTitle": "AI Visibility Audit",
+        "formDescription": "Enter the business details to run an AI visibility audit. The report is emailed automatically when finished.",
+        "formFields": {
+          "values": [
+            { "fieldLabel": "Business Name", "requiredField": true },
+            { "fieldLabel": "Town / City", "requiredField": true },
+            { "fieldLabel": "County / Wider Area", "requiredField": false },
+            { "fieldLabel": "Services (comma separated)", "requiredField": true },
+            { "fieldLabel": "Known Competitors (comma separated)", "requiredField": false },
+            { "fieldLabel": "Report Recipient Email", "requiredField": true }
+          ]
+        },
+        "options": {}
+      },
+      "id": "form-trigger-001",
+      "name": "Audit Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [-200, 560],
+      "notes": "Your audit intake. Copy the Production URL after activating the workflow. Business Name must match how the business appears publicly online.",
+      "webhookId": "baron-geo-audit-form"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ============================================================\n// BUILD PROMPTS\n// Turns the form input into up to 18 buyer-intent questions.\n// EDITABLE: the question templates below, the service cap\n// (.slice(0, 4)) and the total cap (.slice(0, 18)).\n// Keep templates IDENTICAL month-to-month per client so\n// visibility scores stay comparable.\n// ============================================================\nconst form = $input.first().json;\nconst business = (form['Business Name'] || '').trim();\nconst town = (form['Town / City'] || '').trim();\nconst county = (form['County / Wider Area'] || '').trim();\nconst services = (form['Services (comma separated)'] || '')\n  .split(',')\n  .map(s => s.trim())\n  .filter(Boolean)\n  .slice(0, 4); // cap at 4 services to control cost\n\nconst prompts = [];\n\n// --- Buyer-intent prompts per service (edit wording freely) ---\nfor (const service of services) {\n  prompts.push({ prompt: `Who is the best ${service} in ${town}?`, category: 'buyer-intent' });\n  prompts.push({ prompt: `I need a ${service} in ${town}. Who do you recommend and why?`, category: 'buyer-intent' });\n  prompts.push({ prompt: `Recommend a reliable, well-reviewed ${service} near ${town}.`, category: 'buyer-intent' });\n}\n\n// --- Wider-area prompt ---\nif (county && services.length > 0) {\n  prompts.push({ prompt: `Best ${services[0]} in ${county}?`, category: 'buyer-intent-wide' });\n}\n\n// --- Brand-reputation prompts ---\nprompts.push({ prompt: `Is ${business} in ${town} any good? What do people say about them?`, category: 'brand' });\nprompts.push({ prompt: `Tell me about ${business}, ${town}. What services do they offer and are they reputable?`, category: 'brand' });\n\n// --- Cap total prompts ---\nconst capped = prompts.slice(0, 18);\n\nreturn capped.map((p, i) => ({\n  json: {\n    index: i,\n    prompt: p.prompt,\n    category: p.category,\n    business,\n    town\n  }\n}));"
+      },
+      "id": "build-prompts-002",
+      "name": "Build Prompts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [40, 560],
+      "notes": "Generates up to 18 questions. Edit the templates inside — comments in the code show what's safe to change."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"claude-sonnet-4-6\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }}}], \"tools\": [{\"type\": \"web_search_20250305\", \"name\": \"web_search\", \"max_uses\": 3}] }",
+        "options": {
+          "batching": {
+            "batch": { "batchSize": 2, "batchInterval": 1500 }
+          }
+        }
+      },
+      "id": "ask-claude-003",
+      "name": "Ask Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 360],
+      "notes": "CREDENTIAL NEEDED: Header Auth → Name: x-api-key, Value: your Anthropic API key. Uses Claude with live web search (max 3 searches per question).",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "Anthropic API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extracts the plain-text answer from Claude's response\n// and re-attaches the original prompt. No changes needed.\nconst src = $('Build Prompts').item.json;\nconst blocks = $json.content || [];\nconst answer = blocks\n  .filter(b => b.type === 'text')\n  .map(b => b.text)\n  .join('\\n')\n  .trim();\n\nreturn {\n  json: {\n    index: src.index,\n    prompt: src.prompt,\n    category: src.category,\n    claude_answer: answer || '(no answer returned)'\n  }\n};"
+      },
+      "id": "norm-claude-004",
+      "name": "Normalise Claude Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 360],
+      "notes": "No changes needed."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"sonar\", \"messages\": [{\"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }}}] }",
+        "options": {
+          "batching": {
+            "batch": { "batchSize": 2, "batchInterval": 1500 }
+          }
+        }
+      },
+      "id": "ask-pplx-005",
+      "name": "Ask Perplexity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 560],
+      "notes": "CREDENTIAL NEEDED: Header Auth → Name: Authorization, Value: 'Bearer pplx-xxxx'. Get a key at perplexity.ai/settings/api. Sonar model is web-grounded by default.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "Perplexity API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extracts the plain-text answer from Perplexity's response.\n// No changes needed.\nconst src = $('Build Prompts').item.json;\nconst answer = ($json.choices && $json.choices[0] && $json.choices[0].message)\n  ? $json.choices[0].message.content\n  : '';\n\nreturn {\n  json: {\n    index: src.index,\n    perplexity_answer: (answer || '(no answer returned)').trim()\n  }\n};"
+      },
+      "id": "norm-pplx-006",
+      "name": "Normalise Perplexity Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 560],
+      "notes": "No changes needed."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"gpt-4o\", \"tools\": [{\"type\": \"web_search\"}], \"input\": {{ JSON.stringify($json.prompt) }} }",
+        "options": {
+          "batching": {
+            "batch": { "batchSize": 2, "batchInterval": 1500 }
+          }
+        }
+      },
+      "id": "ask-gpt-007",
+      "name": "Ask ChatGPT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 760],
+      "notes": "CREDENTIAL NEEDED: Header Auth → Name: Authorization, Value: 'Bearer sk-xxxx'. Get a key at platform.openai.com. Uses the Responses API with web search — the closest API proxy to the ChatGPT app.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extracts the plain-text answer from OpenAI's Responses API\n// output. No changes needed.\nconst src = $('Build Prompts').item.json;\nconst out = $json.output || [];\nlet answer = '';\nfor (const o of out) {\n  if (o.type === 'message' && Array.isArray(o.content)) {\n    answer += o.content\n      .filter(c => c.type === 'output_text')\n      .map(c => c.text)\n      .join('\\n');\n  }\n}\n\nreturn {\n  json: {\n    index: src.index,\n    chatgpt_answer: (answer || '(no answer returned)').trim()\n  }\n};"
+      },
+      "id": "norm-gpt-008",
+      "name": "Normalise ChatGPT Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 760],
+      "notes": "No changes needed."
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "id": "merge-009",
+      "name": "Merge Answers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [820, 560],
+      "notes": "Combines the 3 engines' answers per question. If you remove an engine branch, reduce Number of Inputs here to match."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"claude-sonnet-4-6\", \"max_tokens\": 900, \"messages\": [{\"role\": \"user\", \"content\": {{ JSON.stringify('You are an AI-visibility analyst. Business being audited: ' + $('Audit Request Form').first().json['Business Name'] + ' in ' + $('Audit Request Form').first().json['Town / City'] + '. Known competitors: ' + ($('Audit Request Form').first().json['Known Competitors (comma separated)'] || 'none listed') + '.\\n\\nBelow are three AI-generated answers to the consumer question: ' + $json.prompt + '\\n\\n--- ANSWER A (Claude) ---\\n' + ($json.claude_answer || '(no answer)') + '\\n\\n--- ANSWER B (Perplexity) ---\\n' + ($json.perplexity_answer || '(no answer)') + '\\n\\n--- ANSWER C (ChatGPT) ---\\n' + ($json.chatgpt_answer || '(no answer)') + '\\n\\nAnalyse whether the audited business is mentioned or recommended in each answer. Return ONLY valid JSON, no markdown fences, no commentary, with this exact shape: {\"claude\": {\"mentioned\": true/false, \"position\": number or null, \"sentiment\": \"positive\" or \"neutral\" or \"negative\" or null, \"competitors_mentioned\": [\"name\", ...]}, \"perplexity\": {\"mentioned\": true/false, \"position\": number or null, \"sentiment\": \"positive\" or \"neutral\" or \"negative\" or null, \"competitors_mentioned\": [\"name\", ...]}, \"chatgpt\": {\"mentioned\": true/false, \"position\": number or null, \"sentiment\": \"positive\" or \"neutral\" or \"negative\" or null, \"competitors_mentioned\": [\"name\", ...]}, \"key_quote\": \"the single most useful sentence from any answer for a sales pitch\"}. position means where the audited business appears in any recommended list (1 = recommended first), null if not mentioned. competitors_mentioned means other business names recommended instead of the audited business.') }}}] }",
+        "options": {
+          "batching": {
+            "batch": { "batchSize": 2, "batchInterval": 1500 }
+          }
+        }
+      },
+      "id": "analyse-010",
+      "name": "Analyse Mentions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1060, 560],
+      "notes": "CREDENTIAL NEEDED: same Anthropic Header Auth credential as Ask Claude. Analyses all 3 answers per question and returns structured JSON.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "Anthropic API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ============================================================\n// AGGREGATE RESULTS\n// Parses each analysis, computes visibility scores per engine,\n// and ranks the competitors AI recommends instead.\n// No changes needed.\n// ============================================================\nconst analyses = $input.all();\nconst merged = $('Merge Answers').all();\nconst form = $('Audit Request Form').first().json;\n\nconst rows = [];\nlet claudeMentions = 0;\nlet pplxMentions = 0;\nlet gptMentions = 0;\nconst competitorCount = {};\n\nfor (let i = 0; i < analyses.length; i++) {\n  const resp = analyses[i].json;\n  const blocks = resp.content || [];\n  let text = blocks.filter(b => b.type === 'text').map(b => b.text).join('\\n').trim();\n  text = text.replace(/```json/gi, '').replace(/```/g, '').trim();\n\n  let a = null;\n  try { a = JSON.parse(text); } catch (e) { a = null; }\n\n  const src = merged[i] ? merged[i].json : {};\n\n  if (a) {\n    if (a.claude && a.claude.mentioned) claudeMentions++;\n    if (a.perplexity && a.perplexity.mentioned) pplxMentions++;\n    if (a.chatgpt && a.chatgpt.mentioned) gptMentions++;\n    const comps = []\n      .concat((a.claude && a.claude.competitors_mentioned) || [])\n      .concat((a.perplexity && a.perplexity.competitors_mentioned) || [])\n      .concat((a.chatgpt && a.chatgpt.competitors_mentioned) || []);\n    for (const c of comps) {\n      const k = String(c).trim();\n      if (k) competitorCount[k] = (competitorCount[k] || 0) + 1;\n    }\n  }\n\n  rows.push({\n    prompt: src.prompt || '(unknown prompt)',\n    category: src.category || '',\n    analysis: a\n  });\n}\n\nconst total = analyses.length;\nconst topCompetitors = Object.entries(competitorCount)\n  .sort((x, y) => y[1] - x[1])\n  .slice(0, 8)\n  .map(([name, count]) => ({ name, count }));\n\nreturn [{\n  json: {\n    business: form['Business Name'],\n    town: form['Town / City'],\n    audit_date: new Date().toISOString().slice(0, 10),\n    total_prompts: total,\n    claude_mentions: claudeMentions,\n    perplexity_mentions: pplxMentions,\n    chatgpt_mentions: gptMentions,\n    claude_visibility_rate: total ? Math.round((100 * claudeMentions) / total) : 0,\n    perplexity_visibility_rate: total ? Math.round((100 * pplxMentions) / total) : 0,\n    chatgpt_visibility_rate: total ? Math.round((100 * gptMentions) / total) : 0,\n    top_competitors: topCompetitors,\n    rows\n  }\n}];"
+      },
+      "id": "aggregate-011",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 560],
+      "notes": "Computes the visibility scores. No changes needed. Skim its output before sending a report to a paying client."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"model\": \"claude-sonnet-4-6\", \"max_tokens\": 4000, \"messages\": [{\"role\": \"user\", \"content\": {{ JSON.stringify('You are generating a client-facing AI Visibility Audit report for Baron AI Solutions LTD, a UK agency. Audience: a small business owner with no technical knowledge. Tone: clear, professional, no jargon, no hype.\\n\\nProduce a COMPLETE standalone HTML document (inline CSS only, clean modern design, dark navy and white palette, works in an email client). Return ONLY the HTML, no markdown fences, no commentary.\\n\\nStructure: 1) Header with report title, business name, town, audit date, and Baron AI Solutions branding text. 2) Headline scorecard: visibility rate on each of the three AI engines (ChatGPT, Claude, Perplexity) as big percentages with a one-line plain-English verdict. 3) What this means: 3-4 sentences explaining that customers now ask AI tools who to hire and this report shows how often the business is recommended. 4) Competitors AI recommends instead: table of top competitors with mention counts. 5) Question-by-question results: a table with the question asked, whether the business was mentioned on each engine (tick/cross), and sentiment. 6) Key finding: use the most damaging or most useful key_quote from the data. 7) Recommended next steps: 4-5 bullet actions (website answer-readiness, schema markup, review generation, third-party citations, consistent listings) framed as what Baron AI Solutions would do in a monthly programme. 8) Footer: Baron AI Solutions LTD contact placeholder and a disclaimer that AI answers vary over time and by user, and no agency can guarantee specific AI recommendations.\\n\\nAudit data (JSON): ' + JSON.stringify($json)) }}}] }",
+        "options": {}
+      },
+      "id": "report-012",
+      "name": "Generate HTML Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 560],
+      "notes": "CREDENTIAL NEEDED: same Anthropic Header Auth credential. EDIT THE PROMPT: replace 'Baron AI Solutions LTD contact placeholder' with your real email/phone/website, and adjust the colour palette line to your brand.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "Anthropic API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Pulls the HTML out of Claude's response and prepares the\n// email fields. No changes needed.\nconst blocks = $json.content || [];\nlet html = blocks.filter(b => b.type === 'text').map(b => b.text).join('\\n').trim();\nhtml = html.replace(/^```html\\s*/i, '').replace(/```\\s*$/,'').trim();\n\nconst form = $('Audit Request Form').first().json;\n\nreturn {\n  json: {\n    html,\n    subject: 'AI Visibility Audit — ' + form['Business Name'] + ' (' + form['Town / City'] + ')',\n    to: form['Report Recipient Email']\n  }\n};"
+      },
+      "id": "extract-013",
+      "name": "Extract Report HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 560],
+      "notes": "No changes needed."
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "gmail-014",
+      "name": "Send Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2020, 560],
+      "notes": "CREDENTIAL NEEDED: Gmail OAuth2. Sends the HTML report to the email entered in the form.",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_AFTER_IMPORT",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Audit Request Form": {
+      "main": [
+        [
+          { "node": "Build Prompts", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Prompts": {
+      "main": [
+        [
+          { "node": "Ask Claude", "type": "main", "index": 0 },
+          { "node": "Ask Perplexity", "type": "main", "index": 0 },
+          { "node": "Ask ChatGPT", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Ask Claude": {
+      "main": [
+        [
+          { "node": "Normalise Claude Answer", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Ask Perplexity": {
+      "main": [
+        [
+          { "node": "Normalise Perplexity Answer", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Ask ChatGPT": {
+      "main": [
+        [
+          { "node": "Normalise ChatGPT Answer", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Normalise Claude Answer": {
+      "main": [
+        [
+          { "node": "Merge Answers", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Normalise Perplexity Answer": {
+      "main": [
+        [
+          { "node": "Merge Answers", "type": "main", "index": 1 }
+        ]
+      ]
+    },
+    "Normalise ChatGPT Answer": {
+      "main": [
+        [
+          { "node": "Merge Answers", "type": "main", "index": 2 }
+        ]
+      ]
+    },
+    "Merge Answers": {
+      "main": [
+        [
+          { "node": "Analyse Mentions", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Analyse Mentions": {
+      "main": [
+        [
+          { "node": "Aggregate Results", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          { "node": "Generate HTML Report", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate HTML Report": {
+      "main": [
+        [
+          { "node": "Extract Report HTML", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Report HTML": {
+      "main": [
+        [
+          { "node": "Send Report", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
