@@ -105,4 +105,4 @@ The next engineering priorities are validated analysis output, explicit failure 
 
 ## Project status
 
-This README describes the supplied workflow configuration. The workflow has not been executed as part of this review; live API behaviour, email delivery and production reliability remain unverified.
+Prototype. The JSON export in this repository is the complete workflow, and CI checks on every push that it is valid JSON with no committed API keys. It needs your own API credentials to run. The points under Known limitations are the open work, and I make no claims here about measured client results.
